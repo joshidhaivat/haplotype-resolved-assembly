@@ -1,0 +1,28 @@
+# Build artifacts
+obj/
+bin/
+
+# Jupyter checkpoints
+.ipynb_checkpoints/
+
+# OL database files (large, generated at runtime)
+*.prefix
+*.suffix
+*.counts
+
+# Jellyfish databases (large)
+*.jf
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Debug logs
+debug.log
