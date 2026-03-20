@@ -183,4 +183,4 @@ private:
     std::chrono::steady_clock::time_point start_time_;
 };
 
-#endif // DEBUG_LOGGER_H
+#endif

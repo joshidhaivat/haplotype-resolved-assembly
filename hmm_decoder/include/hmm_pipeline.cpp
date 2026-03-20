@@ -16,7 +16,7 @@ HMMPipeline::HMMPipeline(const HMMParams& params,
       output_filename_(output_filename),
       batch_size_(batch_size) {
     
-    // Allocate threads intelligently
+    // Allocate threads
     num_ol_workers_ = std::max(1, std::min(1, total_threads / 10));
     num_hmm_workers_ = std::max(1, total_threads - num_ol_workers_ - 2);
     
@@ -32,8 +32,6 @@ void HMMPipeline::run() {
     
     auto start_time = std::chrono::high_resolution_clock::now();
     
-    // Create queues with bounded sizes for backpressure
-    // Keep 3-5 batches ahead to prevent starvation, but not too many to avoid memory bloat
     size_t queue_capacity = std::max(3, num_ol_workers_) + 2;  // e.g., 8 workers + 2 = 10 batches max
     
     ThreadSafeQueue<std::vector<SequenceRecord>> fasta_to_ol(queue_capacity);

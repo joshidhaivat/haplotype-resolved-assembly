@@ -5,14 +5,8 @@
 #include <cstring>
 //#include "debug_logger.h"
 
-// ============================================================================
-// OPTIMIZATION 1: Inline logsumexp for fixed M=5
-// ============================================================================
-// Before: Generic vector-based logsumexp with iterator overhead
-// After: Unrolled loop for exactly 5 states (no iterator, no branching)
 
 inline double logsumexp_fixed5(const double* vals) {
-    // Find max (unrolled)
     double max_val = vals[0];
     max_val = (vals[1] > max_val) ? vals[1] : max_val;
     max_val = (vals[2] > max_val) ? vals[2] : max_val;
@@ -21,7 +15,6 @@ inline double logsumexp_fixed5(const double* vals) {
     
     if (std::isinf(max_val) && max_val < 0) return max_val;
     
-    // Sum (unrolled, no loop)
     double sum = std::exp(vals[0] - max_val)
                + std::exp(vals[1] - max_val)
                + std::exp(vals[2] - max_val)
@@ -31,9 +24,6 @@ inline double logsumexp_fixed5(const double* vals) {
     return max_val + std::log(sum);
 }
 
-// ============================================================================
-// OPTIMIZATION 2: Pre-compute reciprocals (multiply faster than divide)
-// ============================================================================
 
 void multivariate_gaussian(const std::vector<unsigned long int>& x,
                           const std::vector<double>& mu,
@@ -47,7 +37,6 @@ void multivariate_gaussian(const std::vector<unsigned long int>& x,
     result.resize(n, m);
 
     if (integer_mode) {
-        // Pre-calculate constants (moved outside loops)
         double inv_sqrt_2var[5];
         for (size_t j = 0; j < m; ++j) {
             inv_sqrt_2var[j] = 1.0 / std::sqrt(2.0 * var[j]);
@@ -90,9 +79,6 @@ void compute_logAt_fast(const Matrix& logA, double delta_t, Matrix& out) {
     }
 }
 
-// ============================================================================
-// OPTIMIZATION 3: Stack arrays instead of heap vectors for small fixed sizes
-// ============================================================================
 
 void log_forward(const Matrix& A, const Matrix& B, 
                 const std::vector<double>& initial, Matrix& alpha) {
@@ -105,7 +91,6 @@ void log_forward(const Matrix& A, const Matrix& B,
         alpha(0, j) = initial[j] + B(0, j);
     }
 
-    // Use stack array instead of vector (faster allocation)
     double temp_vals[5];  // M=5 is constant
     
     for (size_t t = 1; t < T; ++t) {
@@ -127,7 +112,7 @@ void log_backward(const Matrix& A, const Matrix& B, Matrix& beta) {
         beta(T-1, j) = 0.0;
     }
 
-    double temp_vals[5];  // Stack array
+    double temp_vals[5];
     
     for (int t = T - 2; t >= 0; --t) {
         for (size_t i = 0; i < M; ++i) {
@@ -150,7 +135,7 @@ void compute_gamma(const Matrix& A, const Matrix& B,
     size_t M = alpha.cols;
     gamma.resize(T, M);
 
-    double log_probs[5];  // Stack array
+    double log_probs[5];
     
     for (size_t t = 0; t < T; ++t) {
         for (size_t j = 0; j < M; ++j) {
@@ -285,10 +270,6 @@ std::vector<HetLocation> extract_het_locs(const std::vector<int>& states,
     return result;
 }
 
-// ============================================================================
-// OPTIMIZATION 4: Direct array cache instead of unordered_map
-// OPTIMIZATION 5: Reuse matrices between passes
-// ============================================================================
 
 void log_viterbi(const HMMParams& params,
                 const std::vector<unsigned long int>& V,
@@ -302,9 +283,6 @@ void log_viterbi(const HMMParams& params,
     
     if (T == 0) throw std::runtime_error("Empty observation sequence");
     
-    // ========================================================================
-    // Pre-compute delta values (shared by both passes)
-    // ========================================================================
     std::vector<int> dV(T - 1);
     std::vector<double> delta_t(T - 1);
     for (size_t t = 0; t < T - 1; ++t) {
@@ -312,53 +290,33 @@ void log_viterbi(const HMMParams& params,
         delta_t[t] = gradient_coeff(dV[t]);
     }
     
-    // ========================================================================
-    // Calculate initial emission probabilities (will be modified in pass 2)
-    // ========================================================================
     Matrix B;
     multivariate_gaussian(V, params.emission_mean, params.emission_var, B, true);
     
-    // ========================================================================
-    // Allocate matrices once (reused in both passes)
-    // ========================================================================
     Matrix states(T, M);
     Matrix trace(T, M);
     
-    // ========================================================================
-    // Static transition matrix for small deltas (shared)
-    // ========================================================================
     Matrix Astat(M, M, -std::numeric_limits<double>::infinity());
     for (size_t i = 0; i < M; ++i) {
         Astat(i, i) = 0.0;
     }
     
-    // ========================================================================
-    // OPTIMIZATION: Direct-indexed cache instead of unordered_map
-    // ========================================================================
     constexpr int CACHE_SIZE = 1024;
     std::vector<Matrix> At_cache(CACHE_SIZE);
     std::vector<bool> cache_valid(CACHE_SIZE, false);
     
     double mean_threshold = 0.15 * params.emission_mean[2];
     
-    // ========================================================================
-    // Helper lambda for Viterbi pass (reused twice)
-    // ========================================================================
     auto viterbi_pass = [&](bool is_second_pass) {
-        // Initialize
         for (size_t j = 0; j < M; ++j) {
             states(0, j) = params.initial[j] + B(0, j);
             trace(0, j) = 0;
         }
         
-        // double temp_vals[5];  // Stack array for M=5
-        
         for (size_t t = 1; t < T; ++t) {
-            // Get transition matrix
             const Matrix* A_current;
             if (dV[t-1] > mean_threshold) {
                 int qd = quantize_delta(delta_t[t-1]);
-                // Clamp to valid cache range
                 qd = std::min(std::max(qd, 0), CACHE_SIZE - 1);
                 
                 if (!cache_valid[qd]) {
@@ -370,7 +328,6 @@ void log_viterbi(const HMMParams& params,
                 A_current = &Astat;
             }
             
-            // Viterbi step
             for (size_t j = 0; j < M; ++j) {
                 double max_val = -std::numeric_limits<double>::infinity();
                 int max_idx = 0;
@@ -389,12 +346,8 @@ void log_viterbi(const HMMParams& params,
         }
     };
     
-    // ========================================================================
-    // FIRST PASS: Initial Viterbi
-    // ========================================================================
     viterbi_pass(false);
     
-    // Backtrack
     std::vector<int> out(T);
     double max_val = states(T-1, 0);
     int max_idx = 0;
@@ -411,7 +364,7 @@ void log_viterbi(const HMMParams& params,
     }
     
     // ========================================================================
-    // SECOND PASS: Adjust mu based on first pass results
+    // SECOND PASS: Adjust coverage mean based on first pass results
     // ========================================================================
     
     // Sliding window setup
@@ -438,7 +391,7 @@ void log_viterbi(const HMMParams& params,
         x = 1.0;
     }
     
-    // Update B matrix based on sliding window analysis
+    
     for (size_t t = 1; t < T; ++t) {
         
         temp_mu = params.emission_mean[2]; // Initialize each time to global mean
@@ -503,19 +456,9 @@ void log_viterbi(const HMMParams& params,
         }
     }
     
-    // ========================================================================
-    // Run Viterbi again with adjusted B matrix
-    // ========================================================================
     viterbi_pass(true);
-    
-    // ========================================================================
-    // Compute gamma (using optimized version)
-    // ========================================================================
     compute_gamma(params.transition, B, params.initial, gamma_out);
     
-    // ========================================================================
-    // Final backtrack
-    // ========================================================================
     max_val = states(T-1, 0);
     max_idx = 0;
     for (size_t j = 1; j < M; ++j) {

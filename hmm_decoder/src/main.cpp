@@ -99,10 +99,10 @@ int main(int argc, char* argv[]) {
     std::string params_file;
     std::string fasta_file;
     std::string jellyfish_db;
+    std::string jellyfish_path = "jellyfish";
     std::string output_file = "hmm_results.txt";
     int threads = std::thread::hardware_concurrency();
     int batch_size = 1000;
-    std::string jellyfish_path = "jellyfish";
     std::string jftool_path = "./bin/JFToOl";
     bool force_rebuild = false;
 
@@ -116,7 +116,6 @@ int main(int argc, char* argv[]) {
     for (int i = 1; i < argc; ++i) {
         std::string arg = argv[i];
 
-        // Helper: consume the next token as the value for a flag
         auto next_val = [&](const std::string& flag) -> std::string {
             if (i + 1 >= argc) {
                 std::cerr << "Error: " << flag << " requires an argument\n";

@@ -9,11 +9,10 @@
 #include "thread_safe_queue.h"
 #include "data_structures.h"
 #include "fasta_reader.h"
-#include "ol_worker.h"  // CHANGED: use ol_worker instead of jellyfish_worker
+#include "ol_worker.h"
 #include "hmm_functions.h"
 #include "output_writer.h"
 
-// Stage 1: FASTA Reader - produces batches of sequences
 class FastaReaderWorker {
 public:
     FastaReaderWorker(const std::string& fasta_file, 
@@ -29,7 +28,6 @@ private:
     std::atomic<size_t> total_reads_{0};
 };
 
-// Stage 2: OL Workers - process batches through Ordered List database
 class OLWorkerThread {
 public:
     OLWorkerThread(ThreadSafeQueue<std::vector<SequenceRecord>>& input_queue,
@@ -47,7 +45,6 @@ private:
     int worker_id_;
 };
 
-// Stage 3: HMM Decoder Workers - decode k-mer counts
 class HMMDecoderWorker {
 public:
     HMMDecoderWorker(ThreadSafeQueue<std::shared_ptr<ReadKmerData>>& input_queue,
@@ -63,7 +60,6 @@ private:
     int worker_id_;
 };
 
-// Stage 4: Output file writer Workers - write the processed intermediate results to output file
 class OutputFileWriter {
 public:
     OutputFileWriter(ThreadSafeQueue<std::pair<std::string, std::vector<HetLocation>>>& input_queue,
@@ -76,4 +72,4 @@ private:
     const std::string& filename_;
 };
 
-#endif // PIPELINE_WORKERS_H
+#endif

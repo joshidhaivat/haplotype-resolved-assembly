@@ -2,9 +2,6 @@
 #include <algorithm>
 #include <iostream>
 
-// ============================================================================
-// OLDatabase Implementation
-// ============================================================================
 
 OLDatabase::OLDatabase(const std::string& prefix_starts_path,
                        const std::string& suffixes_path,
@@ -174,9 +171,6 @@ int OLDatabase::query_kmer(uint64_t& kmer42) const {
     return 0;  // Not found
 }
 
-// ============================================================================
-// OLWorker Implementation
-// ============================================================================
 
 OLWorker::OLWorker(const std::string& prefix_starts_path,
                    const std::string& suffixes_path,

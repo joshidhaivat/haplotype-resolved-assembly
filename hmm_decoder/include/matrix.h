@@ -36,4 +36,4 @@ public:
     }
 };
 
-#endif // MATRIX_H
+#endif

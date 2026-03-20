@@ -22,6 +22,7 @@ bin/
 
 # OS
 .DS_Store
+._README.md
 Thumbs.db
 
 # Debug logs

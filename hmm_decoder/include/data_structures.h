@@ -103,4 +103,4 @@ struct HMMParams {
     }
 };
 
-#endif // DATA_STRUCTURES_H
+#endif

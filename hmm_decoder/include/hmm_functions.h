@@ -17,23 +17,6 @@
 
 inline double compute_window_prob(const Matrix& gamma, const std::vector<int>& indices,
                                   const double sigmoid_factor = 0.1, const double threshold = 0.95) {
-    /*  =============  OLD METHOD  ====================
-        std::vector<double> state1_probs;
-        for (int idx : indices) {
-            state1_probs.push_back(gamma(idx, 1));
-        }
-        double log_sum_state1 = logsumexp(state1_probs);
-        
-        std::vector<double> all_probs;
-        for (int idx : indices) {
-            for (size_t s = 0; s < params_.num_states; ++s) {
-                all_probs.push_back(gamma(idx, s));
-            }
-        }
-        double log_sum_all = logsumexp(all_probs);
-        
-        window_prob = std::exp(log_sum_state1 - log_sum_all);
-    */
     double sum = 0.0;
     double logp = 0.0;
     double upper_threshold = std::log(threshold);
@@ -42,7 +25,6 @@ inline double compute_window_prob(const Matrix& gamma, const std::vector<int>& i
     for (int idx : indices) {
         logp = gamma(idx, 1);
 
-        // Inline logit_from_logp logic
         if (logp <= lower_threshold) {
             sum += (lower_threshold - upper_threshold);
         }
@@ -50,12 +32,10 @@ inline double compute_window_prob(const Matrix& gamma, const std::vector<int>& i
             sum += (upper_threshold - lower_threshold);
         }
         else {
-            // Stable log(p / (1 - p))
             sum += logp - std::log(-std::expm1(logp));
         }
     }
 
-    // Stable sigmoid
     sum = sigmoid_factor * sum;
     if (sum >= 0.0) {
         return 1.0 / (1.0 + std::exp(-sum));
@@ -95,4 +75,4 @@ void log_viterbi(const HMMParams& params,
                 Matrix& gamma_out,
                 std::vector<int>& repeat_mask_out);
 
-#endif // HMM_FUNCTIONS_H
+#endif

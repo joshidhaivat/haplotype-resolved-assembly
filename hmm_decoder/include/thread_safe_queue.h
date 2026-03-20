@@ -49,12 +49,11 @@ public:
         return true;
     }
 
-    // Non-blocking try_pop with timeout
     bool try_pop(T& value, std::chrono::milliseconds timeout = std::chrono::milliseconds(100)) {
         std::unique_lock<std::mutex> lock(mutex_);
         
         if (!cond_not_empty_.wait_for(lock, timeout, [this] { return !queue_.empty() || finished_; })) {
-            return false;  // Timeout
+            return false;
         }
         
         if (queue_.empty()) return false;
@@ -92,4 +91,4 @@ public:
     }
 };
 
-#endif // THREAD_SAFE_QUEUE_H
+#endif

@@ -12,12 +12,6 @@
 // - Then sort each shard by (prefix,suffix).
 // - Emit shards in increasing shard order => globally sorted by prefix then suffix.
 // - Build starts[] as we emit.
-//
-// Usage:
-//   jellyfish dump -c counts.jf | ./build_k21_prefix13_suffix8_sharded_vectors prefix_starts.bin suffixes.bin counts.bin [--shard_bits=12] [--reserve=N] [--max_n=N]
-//
-// Build:
-//   g++ -O3 -march=native -std=c++17 -DNDEBUG build_k21_prefix13_suffix8_sharded_vectors.cpp -o build_k21_prefix13_suffix8_sharded_vectors
 
 #include <algorithm>
 #include <cstdint>
@@ -66,7 +60,7 @@ static void write_all(int fd, const void* buf, size_t nbytes) {
 struct Rec {
   uint32_t prefix; // lower 26 bits used
   uint16_t suffix; // last 8 bases
-  uint16_t count;  // capped
+  uint16_t count;  // capped at 64k
 };
 #pragma pack(pop)
 static_assert(sizeof(Rec) == 8, "Rec should be 8 bytes");
@@ -83,7 +77,7 @@ int main(int argc, char** argv) {
   const std::string out_suf    = argv[2];
   const std::string out_cnt    = argv[3];
 
-  int shard_bits = 12;     // 4096 shards by default
+  int shard_bits = 12;     // 4k shards by default
   uint64_t reserve_n = 0;  // total reserve across all shards (rough)
   uint64_t max_n = 0;
 

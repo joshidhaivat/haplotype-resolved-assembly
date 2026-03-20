@@ -52,4 +52,4 @@ inline int quantize_delta(double delta, double q = 1e-4) {
     return static_cast<int>(std::round(delta / q));
 }
 
-#endif // MATH_UTILS_H
+#endif

@@ -12,7 +12,6 @@
 
 class FastaReader {
 public:
-    // Optimized streaming with configurable read-ahead
     static void stream_batches_parallel(const std::string& filename, 
                                        int batch_size,
                                        std::function<void(std::vector<SequenceRecord>&&)> callback) {
@@ -40,7 +39,7 @@ public:
             if (line.empty()) continue;
 
             if (line[0] == '>' || line[0] == '@') {
-                // Save previous record if exists
+                
                 if (!current.sequence.empty()) {
                     batch.push_back(std::move(current));
                     total_reads++;
@@ -56,7 +55,7 @@ public:
                 
                 current.name = line.substr(1);
                 current.sequence.clear();
-                current.sequence.reserve(20000);  // Pre-allocate for ~20kb reads
+                current.sequence.reserve(20000);
                 in_sequence = true;
             } else if (in_sequence) {
                 current.sequence += line;
@@ -64,27 +63,23 @@ public:
             }
         }
 
-        // Add last record
         if (!current.sequence.empty()) {
             batch.push_back(std::move(current));
             total_reads++;
         }
         
-        // Send remaining batch
         if (!batch.empty()) {
             callback(std::move(batch));
             batches_sent++;
         }
     }
 
-    // Stream-based reader with standard buffering
     static void stream_batches(const std::string& filename, 
                                int batch_size,
                                std::function<void(std::vector<SequenceRecord>&&)> callback) {
         stream_batches_parallel(filename, batch_size, callback);
     }
 
-    // Legacy interface - loads all sequences (kept for compatibility)
     static std::vector<SequenceRecord> read_all(const std::string& filename) {
         std::vector<SequenceRecord> records;
         std::ifstream file(filename);
@@ -122,4 +117,4 @@ public:
     }
 };
 
-#endif // FASTA_READER_H
+#endif

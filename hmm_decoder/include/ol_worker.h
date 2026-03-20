@@ -9,10 +9,8 @@
 #include <stdexcept>
 #include "data_structures.h"
 
-// Forward declaration
 class OLWorker;
 
-// Lookup table for base encoding
 class OLDatabase {
 public:
     OLDatabase(const std::string& prefix_starts_path,
@@ -22,13 +20,10 @@ public:
                bool canonical = true,
                uint32_t linear_cutoff = 32);
     
-    // Query a single k-mer (42-bit encoded)
     int query_kmer(uint64_t& kmer42) const;
     
-    // Get k-mer size
     int get_k() const { return k_; }
     
-    // Allow OLWorker to access private members
     friend class OLWorker;
 
 private:
@@ -83,4 +78,4 @@ private:
     bool encode_kmer(const std::string& seq, size_t pos, uint64_t& kmer42) const;
 };
 
-#endif // OL_WORKER_H
+#endif

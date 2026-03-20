@@ -13,5 +13,4 @@
 void write_results_to_text(
     const std::pair<std::string, std::vector<HetLocation>>& result,
     std::ofstream& file);
-
-#endif // OUTPUT_WRITER_H
+#endif

@@ -36,4 +36,4 @@ private:
     int batch_size_;
 };
 
-#endif // HMM_PIPELINE_H
+#endif
