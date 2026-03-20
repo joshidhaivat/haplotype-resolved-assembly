@@ -234,10 +234,10 @@ The output is a **tab-separated** file with one row per read. Each row contains 
 |--------|-------|-------------|
 | 1 | `read_name` | Read identifier (from FASTA header, without `>`) |
 | 2 | `locations` | Heterozygous segment coordinates as `start,end` pairs; semicolon-separated across segments |
-| 3 | `het_kmers` | 42-bit encoded k-mer positions within each segment (comma-separated within a segment, semicolon-separated across segments) |
-| 4 | `het_probs` | Posterior probability (exp of log-gamma) for each heterozygous k-mer, same order as column 3 |
+| 3 | `het_kmers` | (2k)-bit encoded k-mer positions within each segment (comma-separated within a segment, semicolon-separated across segments) |
+| 4 | `het_probs` | Posterior probability for each heterozygous k-mer, same order as column 3 |
 | 5 | `total_kmers` | Number of k-mers in each segment's detection window; semicolon-separated |
-| 6 | `window_prob` | Sigmoid-aggregated window-level heterozygosity confidence (0-1); semicolon-separated |
+| 6 | `window_prob` | Window-level heterozygosity confidence (0-1); semicolon-separated |
 | 7 | `in_repeat` | Repeat flag per segment: `1` if >50% of window positions were in a repeat region, `0` otherwise |
 
 **Example** (single read with 4 detected heterozygous segments):
